@@ -9,25 +9,27 @@ export const SEED_GRANTS = [
     endDate: '2026-12-30',
     reportingCadence: 'Quarterly',
     nextReportDue: '2026-06-30',
-    contacts: 2,
     objectives: [
       {
         id: 'o1',
         title: 'Increase community health screenings',
         description: 'Provide free health screenings to 500 community members',
         outcomes: ['Health screenings completed', 'Early detection of health issues'],
+        progress: 45,
       },
       {
         id: 'o2',
         title: 'Establish wellness education program',
         description: 'Conduct monthly wellness workshops for community members',
         outcomes: ['Workshop attendance', 'Participant satisfaction'],
+        progress: 30,
       },
       {
         id: 'o3',
         title: 'Build community partnerships',
         description: 'Partner with 5 local health organizations',
         outcomes: ['Partnerships established', 'Joint programs launched'],
+        progress: 20,
       },
     ],
     checkins: [
@@ -37,6 +39,7 @@ export const SEED_GRANTS = [
         notes: 'Completed first round of health screenings at community center. Had excellent turnout with 45 participants.',
         objectives: ['o1'],
         tags: ['health-screening', 'milestone'],
+        amount: 8500,
       },
       {
         id: 'c2',
@@ -44,6 +47,7 @@ export const SEED_GRANTS = [
         notes: 'Hosted wellness workshop on nutrition and healthy eating. 32 attendees, very positive feedback.',
         objectives: ['o2'],
         tags: ['workshop', 'nutrition'],
+        amount: 3200,
       },
       {
         id: 'c3',
@@ -51,8 +55,10 @@ export const SEED_GRANTS = [
         notes: 'Met with City Hospital to discuss partnership opportunities. They are interested in co-hosting screenings.',
         objectives: ['o3'],
         tags: ['partnership', 'meeting'],
+        amount: 450,
       },
     ],
+    reports: [],
     createdAt: '2024-01-01',
   },
   {
@@ -65,9 +71,9 @@ export const SEED_GRANTS = [
     endDate: '2027-05-30',
     reportingCadence: 'Semi-Annual',
     nextReportDue: '2026-11-30',
-    contacts: 1,
     objectives: [],
     checkins: [],
+    reports: [],
     createdAt: '2025-01-15',
   },
 ]

@@ -2,13 +2,20 @@ import React from 'react'
 import Topbar from '../components/Topbar'
 import GrantCard from '../components/GrantCard'
 import { daysUntil, fmtDate } from '../utils/helpers'
+import { CheckCircle, AlertCircle, Calendar, ClipboardList } from 'lucide-react'
 
 export default function Dashboard({ grants, navigate }) {
   const activeGrants   = grants.filter(g => g.status === 'active')
   const upcomingGrants = grants.filter(g => g.status === 'upcoming')
   const withReports    = activeGrants.filter(g => g.nextReportDue)
-  const soonestDays    = withReports.length
-    ? Math.min(...withReports.map(g => daysUntil(g.nextReportDue) ?? 999))
+
+  const overdueGrants = activeGrants.filter(g => g.nextReportDue && daysUntil(g.nextReportDue) < 0)
+  const overdueCount  = overdueGrants.length
+
+  const soonestGrant = withReports.length
+    ? withReports.reduce((prev, curr) =>
+        (daysUntil(prev.nextReportDue) ?? 999) < (daysUntil(curr.nextReportDue) ?? 999) ? prev : curr
+      )
     : null
 
   return (
@@ -25,26 +32,58 @@ export default function Dashboard({ grants, navigate }) {
       <div className="page-content">
         {/* Stats */}
         <div className="stats-grid">
+          {/* Active Grants */}
           <div className="stat-card">
             <div>
               <div className="stat-label">Active Grants</div>
               <div className="stat-value">{activeGrants.length}</div>
+              {upcomingGrants.length > 0 && (
+                <div className="stat-sub">{upcomingGrants.length} upcoming</div>
+              )}
             </div>
-            <div className="stat-icon blue">✅</div>
+            <div className="stat-icon blue"><CheckCircle size={22} strokeWidth={1.5} /></div>
           </div>
-          <div className="stat-card">
-            <div>
-              <div className="stat-label">Upcoming Reports</div>
-              <div className="stat-value">{withReports.length}</div>
+
+          {/* Next Report Due */}
+          <div
+            className="stat-card"
+            style={{ cursor: soonestGrant ? 'pointer' : 'default' }}
+            onClick={() => soonestGrant && navigate('grant-detail', soonestGrant.id)}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div className="stat-label">Next Report Due</div>
+              <div className="stat-value" style={{ fontSize: soonestGrant ? 24 : 32 }}>
+                {soonestGrant ? fmtDate(soonestGrant.nextReportDue) : '—'}
+              </div>
+              {soonestGrant && (
+                <div className="stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                  {soonestGrant.name}
+                </div>
+              )}
             </div>
-            <div className="stat-icon blue">📅</div>
+            <div className="stat-icon blue"><Calendar size={22} strokeWidth={1.5} /></div>
           </div>
-          <div className="stat-card">
+
+          {/* Overdue Reports */}
+          <div
+            className="stat-card"
+            style={{ cursor: overdueCount > 0 ? 'pointer' : 'default' }}
+            onClick={() => overdueCount > 0 && navigate('grants')}
+          >
             <div>
-              <div className="stat-label">Days to Next Report</div>
-              <div className="stat-value">{soonestDays !== null ? soonestDays : '—'}</div>
+              <div className="stat-label">Overdue Reports</div>
+              <div className="stat-value" style={{ color: overdueCount > 0 ? 'var(--red)' : 'var(--green)' }}>
+                {overdueCount}
+              </div>
+              <div className="stat-sub" style={{ color: overdueCount > 0 ? 'var(--red)' : 'var(--green)' }}>
+                {overdueCount > 0 ? 'needs attention' : 'all on track'}
+              </div>
             </div>
-            <div className="stat-icon amber">⏰</div>
+            <div className={`stat-icon ${overdueCount > 0 ? 'red' : 'green'}`}>
+              {overdueCount > 0
+                ? <AlertCircle size={22} strokeWidth={1.5} />
+                : <CheckCircle size={22} strokeWidth={1.5} />}
+            </div>
           </div>
         </div>
 
@@ -55,7 +94,7 @@ export default function Dashboard({ grants, navigate }) {
 
         {activeGrants.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📋</div>
+            <div className="empty-state-icon"><ClipboardList size={48} strokeWidth={1.25} /></div>
             <div className="empty-state-title">No active grants yet</div>
             <div className="empty-state-desc">Add your first grant to start tracking progress and reporting.</div>
             <button className="btn btn-primary mt-16" onClick={() => navigate('add-grant')}>

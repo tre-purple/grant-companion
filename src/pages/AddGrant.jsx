@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import Topbar from '../components/Topbar'
 import { callClaude } from '../utils/claude'
 import { uid } from '../utils/helpers'
+import { extractTextFromFile } from '../utils/pdfExtract'
+import { CheckCircle, Upload, Sparkles, Info } from 'lucide-react'
 
 const DOC_SLOTS = [
   { key: 'rfp',         label: 'Request for Proposal (RFP)',  hint: "The funder's RFP document" },
@@ -20,14 +22,22 @@ export default function AddGrant({ onGrantCreated, navigate }) {
   async function processDocuments() {
     setStep(2)
 
-    const fileNames = Object.values(files)
-      .filter(Boolean)
-      .map(f => f.name)
-      .join(', ')
+    const entries = await Promise.all(
+      DOC_SLOTS.map(async ({ key, label }) => {
+        const file = files[key]
+        if (!file) return null
+        const text = await extractTextFromFile(file)
+        return text ? `=== ${label} ===\n${text}` : null
+      })
+    )
+    const docContent = entries.filter(Boolean).join('\n\n')
+    const hasContent = docContent.length > 0
 
     const systemPrompt = `You are a grant document analyzer for nonprofits. Extract structured info and return ONLY valid JSON, no markdown, no explanation.`
 
-    const prompt = `Analyze these grant document filenames: ${fileNames}
+    const prompt = `Analyze the following grant documents and extract key information.
+${hasContent ? docContent : `Document filenames: ${Object.values(files).filter(Boolean).map(f => f.name).join(', ')}`}
+
 Return a JSON object with this exact structure:
 {
   "name": "Grant program name",
@@ -74,7 +84,9 @@ Infer realistic values from the document names. Return ONLY the JSON.`
       status: 'active',
       fundingAmount: Number(editing.fundingAmount),
       nextReportDue: editing.endDate || null,
+      objectives: (editing.objectives || []).map(obj => ({ ...obj, progress: obj.progress ?? 0 })),
       checkins: [],
+      reports: [],
       createdAt: new Date().toISOString().split('T')[0],
     }
     setNewGrantId(id)
@@ -89,7 +101,7 @@ Infer realistic values from the document names. Return ONLY the JSON.`
         <Topbar title="Add New Grant" />
         <div className="page-content">
           <div className="success-screen">
-            <div className="success-icon">✅</div>
+            <div className="success-icon"><CheckCircle size={64} strokeWidth={1.25} color="var(--green)" /></div>
             <div className="success-title">Grant Created Successfully!</div>
             <div className="success-desc">
               Your grant is now active. Start adding check-ins to track progress toward your objectives.
@@ -140,8 +152,8 @@ Infer realistic values from the document names. Return ONLY the JSON.`
             <span className="breadcrumb-current">Confirm Grant Details</span>
           </div>
 
-          <div className="banner banner-info mb-16">
-            ℹ️ We extracted the following information from your documents. Review and edit anything before creating the grant.
+          <div className="banner banner-info mb-16" style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <Info size={16} strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 2 }} /> We extracted the following information from your documents. Review and edit anything before creating the grant.
           </div>
 
           <div className="card" style={{ maxWidth: 720 }}>
@@ -228,7 +240,7 @@ Infer realistic values from the document names. Return ONLY the JSON.`
               <div className="upload-section-label">{label}</div>
               <label>
                 <div className={`upload-zone${files[key] ? ' has-file' : ''}`}>
-                  <div className="upload-icon">{files[key] ? '✅' : '⬆️'}</div>
+                  <div className="upload-icon">{files[key] ? <CheckCircle size={28} strokeWidth={1.5} color="var(--green)" /> : <Upload size={28} strokeWidth={1.5} />}</div>
                   {files[key] ? (
                     <div className="upload-text"><strong>{files[key].name}</strong></div>
                   ) : (
@@ -256,7 +268,7 @@ Infer realistic values from the document names. Return ONLY the JSON.`
             disabled={!hasAnyFile}
             onClick={processDocuments}
           >
-            {hasAnyFile ? '✨ Process Documents' : 'Upload at least one document to continue'}
+            {hasAnyFile ? <><Sparkles size={15} strokeWidth={1.75} style={{ marginRight: 6 }} />Process Documents</> : 'Upload at least one document to continue'}
           </button>
         </div>
       </div>

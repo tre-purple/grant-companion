@@ -1,11 +1,12 @@
 import React from 'react'
+import { LayoutDashboard, ClipboardList, BarChart2, Calendar, Settings, Leaf } from 'lucide-react'
 
 const navItems = [
-  { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
-  { id: 'grants',    icon: '📋', label: 'All Grants' },
-  { id: 'reports',   icon: '📊', label: 'Reports', disabled: true },
-  { id: 'calendar',  icon: '📅', label: 'Calendar', disabled: true },
-  { id: 'settings',  icon: '⚙️', label: 'Settings', disabled: true },
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'grants',    icon: ClipboardList,   label: 'All Grants' },
+  { id: 'reports',   icon: BarChart2,       label: 'Reports', disabled: true },
+  { id: 'calendar',  icon: Calendar,        label: 'Calendar', disabled: true },
+  { id: 'settings',  icon: Settings,        label: 'Settings', disabled: true },
 ]
 
 export default function Sidebar({ activePage, navigate }) {
@@ -13,7 +14,7 @@ export default function Sidebar({ activePage, navigate }) {
     <aside className="sidebar">
       <div className="sidebar-logo">
         <div className="sidebar-logo-mark">
-          <div className="logo-icon">🌱</div>
+          <div className="logo-icon"><Leaf size={18} strokeWidth={1.75} color="white" /></div>
           <div className="logo-text">
             <span className="logo-text-main">Grant Companion</span>
             <span className="logo-text-sub">Management Suite</span>
@@ -30,7 +31,7 @@ export default function Sidebar({ activePage, navigate }) {
             style={item.disabled ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             onClick={() => !item.disabled && navigate(item.id)}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon"><item.icon size={16} strokeWidth={1.75} /></span>
             {item.label}
             {item.disabled && (
               <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,.3)' }}>

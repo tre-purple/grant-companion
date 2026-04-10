@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import Topbar from '../components/Topbar'
-import GrantAssistant from '../components/GrantAssistant'
 import { callClaude } from '../utils/claude'
 import { fmtDate, fmtMoney } from '../utils/helpers'
+import { Sparkles, Check, Clipboard, Download, RefreshCw, BookmarkCheck, Bookmark } from 'lucide-react'
+import { uid } from '../utils/helpers'
 
-export default function GenerateReport({ grantId, grants, navigate }) {
+export default function GenerateReport({ grantId, grants, onReportSaved, navigate }) {
   const grant = grants.find(g => g.id === grantId)
 
   const [startDate, setStartDate] = useState('')
@@ -12,6 +13,7 @@ export default function GenerateReport({ grantId, grants, navigate }) {
   const [report, setReport]       = useState(null)
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied]       = useState(false)
+  const [saved, setSaved]         = useState(false)
 
   useEffect(() => {
     if (!grant) return
@@ -66,6 +68,40 @@ Use a formal, factual tone appropriate for a grant funder. Be specific about act
       setReport(`Error generating report: ${e.message}\n\nPlease check your API key in .env and try again.`)
     }
     setGenerating(false)
+    setSaved(false)
+  }
+
+  function downloadReport() {
+    if (!report) return
+    const header = [
+      grant.name,
+      `Funder: ${grant.funder || 'N/A'}`,
+      `Reporting Period: ${fmtDate(startDate)} – ${fmtDate(endDate)}`,
+      '='.repeat(60),
+      '',
+    ].join('\n')
+    const blob = new Blob([header + report], { type: 'text/plain;charset=utf-8' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `${grant.name.replace(/\s+/g, '-')}-report-${startDate}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleSaveReport() {
+    if (!report) return
+    const savedReport = {
+      id: 'r' + uid(),
+      periodStart: startDate,
+      periodEnd: endDate,
+      content: report,
+      generatedAt: new Date().toISOString().split('T')[0],
+    }
+    onReportSaved(grantId, savedReport)
+    setSaved(true)
   }
 
   async function copyToClipboard() {
@@ -87,10 +123,8 @@ Use a formal, factual tone appropriate for a grant funder. Be specific about act
           <span className="breadcrumb-current">Generate Report</span>
         </div>
 
-        <div className="two-col">
-          {/* ── Left: Report ── */}
-          <div>
-            <div className="card mb-16">
+        <div style={{ maxWidth: 780 }}>
+          <div className="card mb-16">
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 4 }}>
                 Generate Report
               </h2>
@@ -104,13 +138,13 @@ Use a formal, factual tone appropriate for a grant funder. Be specific about act
                     className="form-input"
                     type="date"
                     value={startDate}
-                    onChange={e => { setStartDate(e.target.value); setReport(null) }}
+                    onChange={e => { setStartDate(e.target.value); setReport(null); setSaved(false) }}
                   />
                   <input
                     className="form-input"
                     type="date"
                     value={endDate}
-                    onChange={e => { setEndDate(e.target.value); setReport(null) }}
+                    onChange={e => { setEndDate(e.target.value); setReport(null); setSaved(false) }}
                   />
                 </div>
                 <div className="text-xs text-muted mt-8">
@@ -126,21 +160,31 @@ Use a formal, factual tone appropriate for a grant funder. Be specific about act
                 >
                   {generating
                     ? <><span className="spinner" /> Generating report…</>
-                    : '✨ Generate Report'}
+                    : <><Sparkles size={15} strokeWidth={1.75} style={{ marginRight: 6 }} />Generate Report</>}
                 </button>
               )}
 
               {report && (
                 <>
-                  <div className="flex gap-8 mb-16">
-                    <button className="btn btn-secondary btn-sm" onClick={copyToClipboard}>
-                      {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
+                  <div className="flex gap-8 mb-16" style={{ flexWrap: 'wrap' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={copyToClipboard} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      {copied ? <><Check size={13} strokeWidth={2} /> Copied!</> : <><Clipboard size={13} strokeWidth={1.75} /> Copy</>}
                     </button>
-                    <button className="btn btn-success btn-sm" disabled title="Export coming soon">
-                      ⬇️ Export as Doc
+                    <button
+                      className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`}
+                      onClick={handleSaveReport}
+                      disabled={saved}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    >
+                      {saved
+                        ? <><BookmarkCheck size={13} strokeWidth={2} /> Saved</>
+                        : <><Bookmark size={13} strokeWidth={1.75} /> Save Report</>}
                     </button>
-                    <button className="btn btn-ghost btn-sm" onClick={generateReport} disabled={generating}>
-                      ↺ Regenerate
+                    <button className="btn btn-secondary btn-sm" onClick={downloadReport} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Download size={13} strokeWidth={1.75} /> Download
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={generateReport} disabled={generating} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <RefreshCw size={13} strokeWidth={1.75} /> Regenerate
                     </button>
                   </div>
 
@@ -155,14 +199,7 @@ Use a formal, factual tone appropriate for a grant funder. Be specific about act
                   </div>
                 </>
               )}
-            </div>
           </div>
-
-          {/* ── Right: Grant Assistant ── */}
-          <GrantAssistant
-            grant={grant}
-            reportingPeriod={{ start: startDate, end: endDate }}
-          />
         </div>
       </div>
     </>
